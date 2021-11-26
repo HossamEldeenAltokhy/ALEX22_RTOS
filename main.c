@@ -11,86 +11,109 @@
 #include "mDrivers/mADC.h"
 #include "FreeRTOS/FreeRTOS.h"
 #include "FreeRTOS/task.h"
+#include "FreeRTOS/queue.h"
 #include "mDrivers/mUART.h"
 #include "mDrivers/mIO.h"
 #include "mDrivers/mADC.h"
 #include <util/delay.h>
 
-char str1[] = "Task1 is running.\r";
-char str2[] = "Task2 is running.\r";
 
+
+xQueueHandle Queue_Handler;
 xTaskHandle T1_Handler;
 // infinite Loop function
-void vTask1(void* parameters){
-    
+
+void vTask1(void* parameters) {
+
     // Define Variables
-    int i = 0;
-    while(1){
+//        int* pv = (int *) parameters;
+//        int sendValue = * pv;
+    int sendValue = *(int *) parameters;
+
+        
+
+    while (1) {
         // Code 
-        i++;
-        uart_send_str(str1);
-        uart_send('\r');
-        vTaskDelay(2);
-        if(i==5){
-            vTaskSuspend(NULL);
-        }
+
+        xQueueSendToFront(Queue_Handler, &sendValue, 0);
+        taskYIELD();
     }
-    
-   // vTaskDelete(NULL);
+
+    // vTaskDelete(NULL);
 }
 
-void vTask2(void* parameters){
-    
+void vTask2(void* parameters) {
+
     // Define Variables
-    static int y =0;
-    while(1){
+    int receivedData ;
+    portBASE_TYPE xStatus;
+    while (1) {
         // Code 
-//        uart_send_str(str2);
-//        uart_send('\r');
-//        vTaskDelay(2);
-        y++;
-        togglePortData(_PA);
-        vTaskDelay(50);
-        if(y == 20){
-            vTaskResume(T1_Handler);
-            y =0;
+        xStatus = xQueueReceive(Queue_Handler, &receivedData, 100/configTICK_RATE_HZ);
+
+        if (xStatus == pdPASS) {
+            uart_send_Num(receivedData);
+            uart_send('\r');
         }
+
+
     }
-    
-    vTaskDelete(NULL);
+
 }
 
 int main(void) {
     /* Replace with your application code */
-    setPortDir(_PA, OUT);
+
+    Queue_Handler = xQueueCreate(1, sizeof (int));
     init_uart(9600, Rx_disable, Tx_enable);
-    
- 
-    
-    xTaskCreate(vTask2,       /**Task to be called**/
-                "printer",   //** Task Name **//
-                100,        //** Task Stack size **//
-                NULL,         //** Parameters Address **//
-                2,          //** Task Priority Level **//
-                &T1_Handler // ** Task Handler **//
-                );
-    
-    xTaskCreate(vTask1,       /**Task to be called**/
-                "search",   //** Task Name **//
-                100,        //** Task Stack size **//
-                NULL,         //** Parameters Address **//
-                2,          //** Task Priority Level **//
+
+//
+    int data1 = 100;
+    int data2 = 200;
+
+    if (Queue_Handler)
+    {
+
+        xTaskCreate(vTask1, /**Task to be called**/
+                "sender", //** Task Name **//
+                100, //** Task Stack size **//
+                (void *) &data1, //** Parameters Address **//
+                1, //** Task Priority Level **//
                 NULL // ** Task Handler **//
                 );
-    
-    vTaskStartScheduler();
-    
-    
-    
 
-    
-   
+
+//        xTaskCreate(vTask1, /**Task to be called**/
+//                "sender", //** Task Name **//
+//                50, //** Task Stack size **//
+//                (void *) &data2, //** Parameters Address **//
+//                0, //** Task Priority Level **//
+//                NULL // ** Task Handler **//
+//                );
+
+
+
+        xTaskCreate(vTask2, /**Task to be called**/
+                "receive", //** Task Name **//
+                100, //** Task Stack size **//
+                NULL, //** Parameters Address **//
+                1, //** Task Priority Level **//
+                NULL // ** Task Handler **//
+                );
+
+        vTaskStartScheduler();
+
+
+    }
+
+
+
+
+
+
+
     while (1) {
-   
+
+
     }
 }

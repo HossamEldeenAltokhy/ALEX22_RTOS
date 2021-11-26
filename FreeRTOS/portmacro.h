@@ -70,7 +70,7 @@ typedef unsigned char UBaseType_t;
 	#define portMAX_DELAY ( TickType_t ) 0xffff
 #else
 	typedef uint32_t TickType_t;
-	#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
+	#define portMAX_DELAY ( TickType_t ) 0xffffUL
 #endif
 /*-----------------------------------------------------------*/
 
