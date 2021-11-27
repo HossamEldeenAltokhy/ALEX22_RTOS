@@ -18,6 +18,11 @@
 #include <util/delay.h>
 
 
+typedef struct{
+    int data;
+    int dataType;
+    
+}xData;
 
 xQueueHandle Queue_Handler;
 xTaskHandle T1_Handler;
@@ -28,7 +33,7 @@ void vTask1(void* parameters) {
     // Define Variables
 //        int* pv = (int *) parameters;
 //        int sendValue = * pv;
-    int sendValue = *(int *) parameters;
+    xData sendValue = *(xData *) parameters;
 
         
 
@@ -47,14 +52,28 @@ void vTask1(void* parameters) {
 void vTask2(void* parameters) {
 
     // Define Variables
-    int receivedData ;
+    xData receivedData ;
     portBASE_TYPE xStatus;
+    char str1[]= " meters";
+    char str2[]= " grams";
     while (1) {
         // Code 
         xStatus = xQueueReceive(Queue_Handler, &receivedData, 100/configTICK_RATE_HZ);
 
         if (xStatus == pdPASS) {
-            uart_send_Num(receivedData);
+            uart_send_Num(receivedData.data);
+//            uart_send_Num(receivedData.dataType);
+            
+            if(receivedData.dataType == 1){
+                // some Code Task 1
+                uart_send_str(str1);
+            }else if (receivedData.dataType == 2){
+                // Some Code Task 2
+                uart_send_str(str2);
+            }
+            else{
+                
+            }
             uart_send('\r');
             
         }
@@ -67,13 +86,18 @@ void vTask2(void* parameters) {
 int main(void) {
     /* Replace with your application code */
 
-    Queue_Handler = xQueueCreate(1, sizeof (int));
+    Queue_Handler = xQueueCreate(1, sizeof (xData));
     init_uart(9600, Rx_disable, Tx_enable);
 
-//
-    int data1 = 100;
-    int data2 = 200;
-    int data3 = 300;
+//  DATA1
+    xData data1;
+    data1.data = 100;
+    data1.dataType = 1;
+//  DATA2
+    xData data2;
+    data2.data = 200;
+    data2.dataType = 2;
+    
 
     if (Queue_Handler)
     {
@@ -87,6 +111,7 @@ int main(void) {
                 );
     
 
+      
         xTaskCreate(vTask1, /**Task to be called**/
                 "sender", //** Task Name **//
                 100, //** Task Stack size **//
