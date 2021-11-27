@@ -36,6 +36,8 @@ void vTask1(void* parameters) {
         // Code 
 
         xQueueSendToFront(Queue_Handler, &sendValue, 0);
+//        vTaskDelay(50);
+
         taskYIELD();
     }
 
@@ -54,8 +56,9 @@ void vTask2(void* parameters) {
         if (xStatus == pdPASS) {
             uart_send_Num(receivedData);
             uart_send('\r');
+            
         }
-
+        vTaskDelay(50);
 
     }
 
@@ -70,6 +73,7 @@ int main(void) {
 //
     int data1 = 100;
     int data2 = 200;
+    int data3 = 300;
 
     if (Queue_Handler)
     {
@@ -81,16 +85,21 @@ int main(void) {
                 1, //** Task Priority Level **//
                 NULL // ** Task Handler **//
                 );
+    
 
+        xTaskCreate(vTask1, /**Task to be called**/
+                "sender", //** Task Name **//
+                100, //** Task Stack size **//
+                (void *) &data2, //** Parameters Address **//
+                1, //** Task Priority Level **//
+                NULL // ** Task Handler **//
+                );
 
-//        xTaskCreate(vTask1, /**Task to be called**/
-//                "sender", //** Task Name **//
-//                50, //** Task Stack size **//
-//                (void *) &data2, //** Parameters Address **//
-//                0, //** Task Priority Level **//
-//                NULL // ** Task Handler **//
-//                );
+      
+    
 
+   
+       
 
 
         xTaskCreate(vTask2, /**Task to be called**/
